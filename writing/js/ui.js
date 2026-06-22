@@ -47,5 +47,3 @@ function handleGenerate() {
 
   setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
 }
-
-handleGenerate();

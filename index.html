@@ -31,6 +31,43 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(14px);
+      border-bottom: 1.5px solid var(--border);
+      padding: 0 24px;
+    }
+
+    .nav-inner {
+      max-width: 600px;
+      margin: 0 auto;
+      height: 52px;
+      display: flex;
+      align-items: center;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      text-decoration: none;
+      color: var(--text-primary);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .nav-logo span:first-child { font-size: 22px; line-height: 1; }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: 48px 24px;
@@ -151,6 +188,16 @@
 </head>
 <body>
 
+  <nav>
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span>📚</span>
+        <span>Worksheet Generator</span>
+      </a>
+    </div>
+  </nav>
+
+  <main>
   <div class="hero">
     <div class="badge">Worksheet Generator</div>
     <h1>Printable Worksheets<br>for Young Learners</h1>
@@ -174,6 +221,7 @@
   </div>
 
   <footer>Made for kindergarten &amp; early grade learners</footer>
+  </main>
 
 </body>
 </html>
