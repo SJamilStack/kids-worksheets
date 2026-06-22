@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Math Worksheet Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Baloo 2', 'cursive'],
+            hand: ['Architects Daughter', 'cursive'],
+            body: ['Nunito', 'sans-serif'],
+          },
+          keyframes: {
+            pop: { '0%': { transform: 'scale(0.92)', opacity: '0' }, '100%': { transform: 'scale(1)', opacity: '1' } },
+            slideUp: { '0%': { transform: 'translateY(16px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
+          },
+          animation: {
+            pop: 'pop 0.3s cubic-bezier(.34,1.56,.64,1) both',
+            slideUp: 'slideUp 0.4s ease both',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { font-family: 'Nunito', sans-serif; }
+
+    /* Mesh background */
+    .mesh {
+      background-color: #fffbf0;
+      background-image:
+        radial-gradient(at 15% 10%, #fef9c3 0px, transparent 50%),
+        radial-gradient(at 85% 15%, #fce7f3 0px, transparent 45%),
+        radial-gradient(at 50% 95%, #dbeafe 0px, transparent 50%),
+        radial-gradient(at 5%  80%, #d1fae5 0px, transparent 40%);
+    }
+
+    /* Problem box */
+    .problem-box {
+      background: white;
+      border-radius: 14px;
+      padding: 14px 18px 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1.5px solid #f1f5f9;
+      position: relative;
+      animation: pop 0.35s cubic-bezier(.34,1.56,.64,1) both;
+    }
+
+    .problem-box:hover {
+      border-color: #e0e7ff;
+      box-shadow: 0 4px 20px rgba(99,102,241,0.12);
+      transform: translateY(-1px);
+      transition: all 0.18s ease;
+    }
+
+    .problem-num {
+      position: absolute;
+      top: 7px;
+      left: 10px;
+      font-size: 9px;
+      font-weight: 800;
+      color: #cbd5e1;
+      letter-spacing: 0.05em;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    .operand {
+      font-family: 'Baloo 2', cursive;
+      font-size: 1.65rem;
+      font-weight: 700;
+      color: #1e293b;
+      text-align: right;
+      line-height: 1.2;
+      display: block;
+    }
+
+    .operator-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2.5px solid #334155;
+      padding-bottom: 3px;
+      margin-top: 2px;
+    }
+
+    .operator {
+      font-family: 'Baloo 2', cursive;
+      font-size: 1.5rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .op-add  { color: #6366f1; }
+    .op-sub  { color: #f43f5e; }
+
+    .answer-line {
+      height: 36px;
+      margin-top: 6px;
+    }
+
+    /* Answer reveal */
+    .answer-val {
+      font-family: 'Baloo 2', cursive;
+      font-size: 1.5rem;
+      font-weight: 700;
+      text-align: right;
+      color: #059669;
+      margin-top: 4px;
+      display: none;
+    }
+
+    .show-answers .answer-val { display: block; }
+    .show-answers .answer-line { display: none; }
+
+    /* Controls */
+    .ctrl-card {
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(16px);
+      border: 1.5px solid rgba(255,255,255,0.9);
+      border-radius: 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+    }
+
+    /* Difficulty badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.18s cubic-bezier(.34,1.56,.64,1);
+      font-family: 'Nunito', sans-serif;
+    }
+
+    .badge:hover { transform: scale(1.06); }
+
+    .badge-easy   { background: #dcfce7; color: #166534; border-color: #86efac; }
+    .badge-medium { background: #fef9c3; color: #854d0e; border-color: #fde047; }
+    .badge-hard   { background: #ffe4e6; color: #9f1239; border-color: #fda4af; }
+    .badge-layout { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+
+    .badge.active-easy   { background: #16a34a; color: white; border-color: #16a34a; box-shadow: 0 4px 14px rgba(22,163,74,0.35); }
+    .badge.active-medium { background: #d97706; color: white; border-color: #d97706; box-shadow: 0 4px 14px rgba(217,119,6,0.35); }
+    .badge.active-hard   { background: #e11d48; color: white; border-color: #e11d48; box-shadow: 0 4px 14px rgba(225,29,72,0.35); }
+    .badge.active-layout { background: #6366f1; color: white; border-color: #6366f1; box-shadow: 0 4px 14px rgba(99,102,241,0.35); }
+
+    /* Toggle buttons */
+    .op-toggle {
+      padding: 8px 20px;
+      border-radius: 12px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.18s ease;
+    }
+
+    .op-toggle-add         { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
+    .op-toggle-add.on      { background: #6366f1; color: white;   border-color: #6366f1; box-shadow: 0 4px 12px rgba(99,102,241,0.35); }
+    .op-toggle-sub         { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
+    .op-toggle-sub.on      { background: #f43f5e; color: white;   border-color: #f43f5e; box-shadow: 0 4px 12px rgba(244,63,94,0.35); }
+    .op-toggle-carry       { background: #f0fdf4; color: #15803d; border-color: #86efac; }
+    .op-toggle-carry.on    { background: #16a34a; color: white;   border-color: #16a34a; box-shadow: 0 4px 12px rgba(22,163,74,0.35); }
+    .op-toggle-borrow      { background: #fff7ed; color: #c2410c; border-color: #fdba74; }
+    .op-toggle-borrow.on   { background: #ea580c; color: white;   border-color: #ea580c; box-shadow: 0 4px 12px rgba(234,88,12,0.35); }
+
+    /* Horizontal problem box */
+    .problem-box-h {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 12px 14px;
+      flex-wrap: nowrap;
+    }
+    .h-operand {
+      font-family: 'Baloo 2', cursive;
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: #1e293b;
+      white-space: nowrap;
+      line-height: 1;
+    }
+    .h-op {
+      font-family: 'Baloo 2', cursive;
+      font-size: 1.5rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .h-eq {
+      font-family: 'Baloo 2', cursive;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #94a3b8;
+      line-height: 1;
+    }
+    .h-blank {
+      flex: 1;
+      min-width: 44px;
+      max-width: 68px;
+      height: 3px;
+      background: #334155;
+      border-radius: 2px;
+      align-self: flex-end;
+      margin-bottom: 6px;
+    }
+    .problem-box-h .answer-val {
+      font-family: 'Baloo 2', cursive;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #059669;
+      display: none;
+      margin-top: 0;
+      line-height: 1;
+    }
+    .show-answers .problem-box-h .answer-val { display: inline !important; }
+    .show-answers .problem-box-h .h-blank    { display: none; }
+
+    /* Print layout overrides */
+    @media print {
+      .problems-grid.layout-h { grid-template-columns: repeat(2, 1fr) !important; }
+      .problems-grid.layout-m { grid-template-columns: repeat(3, 1fr) !important; }
+
+      .problem-box-h { padding: 10px 12px; }
+      .h-operand { font-size: 1.3rem !important; }
+      .h-op      { font-size: 1.25rem !important; }
+      .h-eq      { font-size: 1.2rem !important; }
+      .h-blank   { margin-bottom: 5px; }
+    }
+
+    /* Carry / Borrow visual helpers inside problem boxes */
+    .carry-hint {
+      display: flex;
+      justify-content: flex-end;
+      padding-right: 3px;
+      margin-bottom: 2px;
+      min-height: 18px;
+      gap: 5px;
+    }
+    .carry-cell {
+      width: 17px; height: 17px;
+      border: 1.5px solid #c7d2fe;
+      border-radius: 3px;
+      background: #eef2ff;
+      font-size: 0.6rem;
+      color: #818cf8;
+      font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Baloo 2', cursive;
+    }
+    .carry-cell-blank { width: 17px; }
+
+    .borrow-hint {
+      display: flex;
+      justify-content: flex-end;
+      gap: 5px;
+      padding-right: 3px;
+      margin-bottom: 2px;
+      min-height: 18px;
+    }
+    .borrow-cell {
+      width: 28px; height: 16px;
+      border-bottom: 1.5px dashed #fca5a5;
+      font-size: 0.6rem;
+      color: #f87171;
+      text-align: center;
+      font-family: 'Baloo 2', cursive;
+      font-weight: 800;
+      display: flex; align-items: flex-end; justify-content: center;
+      padding-bottom: 1px;
+    }
+
+    .op-carry  { color: #16a34a; }
+    .op-borrow { color: #ea580c; }
+
+    /* Pill label inside problem box */
+    .op-pill {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      padding: 1px 6px;
+      border-radius: 99px;
+      text-transform: uppercase;
+    }
+    .op-pill-carry  { background: #dcfce7; color: #15803d; }
+    .op-pill-borrow { background: #fff7ed; color: #c2410c; }
+
+    /* Generate button */
+    .btn-gen {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+      color: white;
+      font-family: 'Baloo 2', cursive;
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 12px 32px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(139,92,246,0.35);
+      transition: all 0.2s cubic-bezier(.34,1.56,.64,1);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .btn-gen:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 10px 28px rgba(139,92,246,0.45); }
+    .btn-gen:active { transform: scale(0.97); }
+
+    /* ───────────── PRINT ───────────── */
+    @media print {
+      .no-print { display: none !important; }
+
+      body { background: white !important; margin: 0; padding: 0; }
+
+      .print-area {
+        padding: 10mm 12mm 8mm !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+      }
+
+      .print-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: flex-end;
+        border-bottom: 2px solid #334155;
+        padding-bottom: 6px;
+        margin-bottom: 14px;
+      }
+
+      .problems-grid {
+        display: grid !important;
+        grid-template-columns: repeat(5, 1fr) !important;
+        gap: 12px 16px !important;
+      }
+
+      .problem-box {
+        box-shadow: none !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+        padding: 10px 12px 8px !important;
+        page-break-inside: avoid;
+        animation: none !important;
+        transform: none !important;
+      }
+
+      .problem-box:hover { transform: none !important; }
+
+      .operand { font-size: 1.35rem !important; }
+      .operator { font-size: 1.25rem !important; }
+      .answer-val { font-size: 1.25rem !important; }
+    }
+  </style>
+</head>
+<body class="mesh min-h-screen">
+
+  <!-- ── Controls ─────────────────────────────────────────────────── -->
+  <div class="no-print max-w-2xl mx-auto px-4 pt-10 pb-6">
+
+    <!-- Header -->
+    <div class="text-center mb-8 animate-slideUp">
+      <div class="text-5xl mb-2">🧮</div>
+      <h1 class="font-display text-4xl sm:text-5xl font-extrabold text-slate-800 leading-tight">
+        Math Worksheet
+      </h1>
+      <p class="text-slate-400 font-body font-semibold mt-1">30 problems · one page · print ready</p>
+    </div>
+
+    <div class="ctrl-card p-6 flex flex-col gap-5">
+
+      <!-- Difficulty -->
+      <div class="flex flex-col gap-2">
+        <span class="text-xs font-extrabold uppercase tracking-widest text-slate-400">Difficulty</span>
+        <div class="flex gap-2 flex-wrap">
+          <button class="badge badge-easy active-easy" data-diff="easy"   onclick="setDiff('easy')">🌱 Easy (0–10)</button>
+          <button class="badge badge-medium"           data-diff="medium" onclick="setDiff('medium')">🔥 Medium (0–20)</button>
+          <button class="badge badge-hard"             data-diff="hard"   onclick="setDiff('hard')">⚡ Hard (0–50)</button>
+        </div>
+      </div>
+
+      <!-- Operations -->
+      <div class="flex flex-col gap-2">
+        <span class="text-xs font-extrabold uppercase tracking-widest text-slate-400">Operations</span>
+        <div class="flex gap-3">
+          <button class="op-toggle op-toggle-add on" id="tog-add" onclick="toggleOp('add')">➕ Addition</button>
+          <button class="op-toggle op-toggle-sub on" id="tog-sub" onclick="toggleOp('sub')">➖ Subtraction</button>
+          <button class="op-toggle op-toggle-carry" id="tog-carry" onclick="toggleOp('carry')">🔢 2-digit + carry</button>
+          <button class="op-toggle op-toggle-borrow" id="tog-borrow" onclick="toggleOp('borrow')">✏️ 2-digit − borrow</button>
+        </div>
+      </div>
+
+      <!-- Layout -->
+      <div class="flex flex-col gap-2">
+        <span class="text-xs font-extrabold uppercase tracking-widest text-slate-400">Layout</span>
+        <div class="flex gap-2 flex-wrap">
+          <button class="badge badge-layout active-layout" data-layout="vertical"   onclick="setLayout('vertical')">▤ Vertical</button>
+          <button class="badge badge-layout"               data-layout="horizontal" onclick="setLayout('horizontal')">▷ Horizontal</button>
+          <button class="badge badge-layout"               data-layout="mixed"      onclick="setLayout('mixed')">⊞ Mixed</button>
+        </div>
+      </div>
+
+      <!-- Child name & date -->
+      <div class="flex flex-wrap gap-4">
+        <div class="flex flex-col gap-1.5 flex-1 min-w-36">
+          <label class="text-xs font-extrabold uppercase tracking-widest text-slate-400">Student Name</label>
+          <input id="stu-name" type="text" placeholder="e.g. Emma" value=""
+            class="font-body font-semibold px-4 py-2.5 rounded-xl border-2 border-slate-100 bg-slate-50 text-slate-800 outline-none focus:border-indigo-300 focus:bg-white transition-all placeholder-slate-300">
+        </div>
+        <div class="flex flex-col gap-1.5 w-36">
+          <label class="text-xs font-extrabold uppercase tracking-widest text-slate-400">Date</label>
+          <input id="stu-date" type="text" placeholder="e.g. May 2025"
+            class="font-body font-semibold px-4 py-2.5 rounded-xl border-2 border-slate-100 bg-slate-50 text-slate-800 outline-none focus:border-indigo-300 focus:bg-white transition-all placeholder-slate-300">
+        </div>
+      </div>
+
+      <!-- Buttons row -->
+      <div class="flex flex-wrap gap-3 items-center pt-1">
+        <button class="btn-gen" onclick="generate()">
+          <span>🎲</span> Generate
+        </button>
+        <button onclick="toggleAnswers()"
+          class="font-display text-base font-bold px-6 py-3 rounded-full border-2 border-emerald-300 text-emerald-600
+                 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 hover:shadow-lg
+                 transition-all duration-200">
+          👁 Toggle Answers
+        </button>
+        <button onclick="window.print()"
+          class="font-display text-base font-bold px-6 py-3 rounded-full border-2 border-indigo-300 text-indigo-600
+                 hover:bg-indigo-500 hover:text-white hover:border-indigo-500 hover:shadow-lg
+                 transition-all duration-200">
+          🖨 Print
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Printable worksheet ──────────────────────────────────────── -->
+  <div class="print-area max-w-2xl mx-auto px-4 pb-12" id="worksheet">
+
+    <!-- Print header (hidden on screen, shown in print via CSS) -->
+    <div class="hidden print-header">
+      <div>
+        <div style="font-family:'Baloo 2',cursive;font-size:1.3rem;font-weight:800;color:#1e293b;">Math Practice</div>
+        <div style="font-size:0.8rem;color:#64748b;font-family:'Nunito',sans-serif;" id="print-meta"></div>
+      </div>
+      <div style="font-family:'Nunito',sans-serif;font-size:0.85rem;color:#64748b;">
+        Score: _______ / 30
+      </div>
+    </div>
+
+    <!-- Screen header -->
+    <div class="no-print flex justify-between items-center mb-4 px-1">
+      <span id="screen-meta" class="text-sm font-bold text-slate-400"></span>
+      <span class="text-sm font-bold text-slate-400">Score: _______ / 30</span>
+    </div>
+
+    <!-- Problems grid -->
+    <div class="problems-grid grid grid-cols-3 sm:grid-cols-5 gap-3" id="problems-grid"></div>
+
+  </div>
+
+  <script>
+    let difficulty = 'easy';
+    let ops = { add: true, sub: true, carry: false, borrow: false };
+    let layout = 'vertical';
+    let showAns = false;
+
+    const ranges = { easy: 10, medium: 20, hard: 50 };
+
+    function setLayout(l) {
+      layout = l;
+      document.querySelectorAll('[data-layout]').forEach(b => {
+        b.classList.toggle('active-layout', b.dataset.layout === l);
+      });
+    }
+
+    function setDiff(d) {
+      difficulty = d;
+      document.querySelectorAll('[data-diff]').forEach(b => {
+        const t = b.dataset.diff;
+        b.className = b.className.replace(/active-\w+/, '').trim();
+        if (t === d) b.classList.add('active-' + d);
+      });
+    }
+
+    function toggleOp(op) {
+      const wouldBeOff = ops[op];
+      const anyOtherOn = Object.keys(ops).some(k => k !== op && ops[k]);
+      if (wouldBeOff && !anyOtherOn) return; // keep at least one active
+      ops[op] = !ops[op];
+      document.getElementById('tog-' + op).classList.toggle('on', ops[op]);
+    }
+
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    // Ranges for the 2-digit special modes by difficulty
+    const carryRanges  = { easy: [11,49],  medium: [11,79],  hard: [11,99] };
+    const borrowRanges = { easy: [21,59],  medium: [21,89],  hard: [21,99] };
+
+    function makeCarryProblem() {
+      // Both 2-digit, ones column MUST sum to ≥ 10 (forces regrouping/carry)
+      const [lo, hi] = carryRanges[difficulty];
+      let a, b, tries = 0;
+      do {
+        a = randInt(lo, hi);
+        b = randInt(lo, hi);
+        tries++;
+      } while ((a % 10) + (b % 10) < 10 && tries < 200);
+      return { a, b, op: 'carry' };
+    }
+
+    function makeBorrowProblem() {
+      // 2-digit subtraction where ones of top < ones of bottom (forces borrowing)
+      const [lo, hi] = borrowRanges[difficulty];
+      let a, b, tries = 0;
+      do {
+        a = randInt(lo, hi);
+        b = randInt(11, a - 1);
+        tries++;
+      } while ((a % 10) >= (b % 10) && tries < 200);
+      return { a, b, op: 'borrow' };
+    }
+
+    function makeProblem() {
+      const max = ranges[difficulty];
+      const availOps = Object.keys(ops).filter(k => ops[k]);
+      const op = availOps[Math.floor(Math.random() * availOps.length)];
+
+      if (op === 'carry')  return makeCarryProblem();
+      if (op === 'borrow') return makeBorrowProblem();
+
+      let a, b;
+      if (op === 'add') {
+        a = randInt(0, max);
+        b = randInt(0, max - a);
+        b = Math.min(b, max);
+      } else {
+        a = randInt(1, max);
+        b = randInt(0, a);
+      }
+      return { a, b, op };
+    }
+
+    function generate() {
+      const grid = document.getElementById('problems-grid');
+      grid.innerHTML = '';
+
+      // Set grid columns based on layout (screen + print via class)
+      grid.classList.remove('layout-h', 'layout-m');
+      if (layout === 'horizontal') {
+        grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+        grid.classList.add('layout-h');
+      } else if (layout === 'mixed') {
+        grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+        grid.classList.add('layout-m');
+      } else {
+        grid.style.gridTemplateColumns = '';
+      }
+
+      const problems = Array.from({ length: 30 }, (_, i) => {
+        const { a, b, op } = makeProblem();
+        const isCarry  = op === 'carry';
+        const isBorrow = op === 'borrow';
+        const isAdd    = op === 'add' || isCarry;
+        const ans      = isAdd ? a + b : a - b;
+        const opSymbol = isAdd ? '+' : '−';
+        const opClass  = isCarry ? 'op-carry' : isBorrow ? 'op-borrow' : isAdd ? 'op-add' : 'op-sub';
+        const delay    = (i * 0.025) + 's';
+
+        // Decide orientation for this problem
+        const useHoriz = layout === 'horizontal' || (layout === 'mixed' && Math.random() < 0.5);
+
+        const box = document.createElement('div');
+        box.style.animationDelay = delay;
+
+        if (useHoriz) {
+          box.className = 'problem-box problem-box-h';
+          box.innerHTML = `
+            <span class="problem-num">${i + 1}</span>
+            <span class="h-operand">${a}</span>
+            <span class="h-op ${opClass}">${opSymbol}</span>
+            <span class="h-operand">${b}</span>
+            <span class="h-eq">=</span>
+            <span class="h-blank"></span>
+            <span class="answer-val">${ans}</span>`;
+        } else {
+          box.className = 'problem-box';
+          box.innerHTML = `
+            <span class="problem-num">${i + 1}</span>
+            <span class="operand">${a}</span>
+            <div class="operator-row">
+              <span class="operator ${opClass}">${opSymbol}</span>
+              <span class="operand" style="flex:1">${b}</span>
+            </div>
+            <div class="answer-line"></div>
+            <div class="answer-val">${ans}</div>`;
+        }
+        return box;
+      });
+
+      problems.forEach(p => grid.appendChild(p));
+
+      // Update meta
+      const name = document.getElementById('stu-name').value.trim();
+      const date = document.getElementById('stu-date').value.trim();
+      const ops_label = [
+        ops.add    && 'Addition',
+        ops.sub    && 'Subtraction',
+        ops.carry  && '2-digit + Carry',
+        ops.borrow && '2-digit − Borrow',
+      ].filter(Boolean).join(' & ');
+      const meta = [name && `Name: ${name}`, date && `Date: ${date}`, `${difficulty.charAt(0).toUpperCase()+difficulty.slice(1)} · ${ops_label}`].filter(Boolean).join('   ·   ');
+      document.getElementById('screen-meta').textContent = meta;
+      document.getElementById('print-meta').textContent = meta;
+
+      showAns = false;
+      document.getElementById('problems-grid').classList.remove('show-answers');
+    }
+
+    function toggleAnswers() {
+      showAns = !showAns;
+      document.getElementById('problems-grid').classList.toggle('show-answers', showAns);
+    }
+
+    // Auto generate on load
+    generate();
+  </script>
+
+</body>
+</html>
